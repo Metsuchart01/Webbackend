@@ -26,7 +26,7 @@ router.post("/", upload.single("profile"), async (req, res) => {
             return res.status(400).json({ message: "Email มีคนใช้ไปแล้ว !! " });
 
         }
-        const profilepath = req.file ? req.file.path : null;
+        const profilepath = req.file ? `/uploads/${req.file.filename}` : null;
 
         const [result] = await conn.query<ResultSetHeader>("insert into users(username,email,phone,password_hash,imageProfile) values(?,?,?,?,?)", [username, email, phone, hashPassword, profilepath]);
         return res.status(200).json({ message: "สมัครสมาชิกสำเร็จ", userId: result.insertId, profile: profilepath });

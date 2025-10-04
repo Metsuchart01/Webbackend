@@ -8,11 +8,13 @@ const express_1 = __importDefault(require("express"));
 const register_1 = require("./controller/register");
 const login_1 = require("./controller/login");
 const index_1 = require("./controller/index");
+const user_1 = require("./controller/user");
+const path_1 = __importDefault(require("path"));
 exports.app = (0, express_1.default)();
 exports.app.use(express_1.default.json());
-exports.app.use("/uploads", express_1.default.static("uploads"));
+exports.app.use("/uploads", express_1.default.static(path_1.default.join(__dirname, "uploads")));
 exports.app.use("/", index_1.router);
-//app.use("/users", users);
+exports.app.use("/user", user_1.router);
 exports.app.use("/register", register_1.router);
 exports.app.use("/login", login_1.router);
 //# sourceMappingURL=app.js.map
