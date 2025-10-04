@@ -16,7 +16,7 @@ exports.router.get("/:id", async (req, res) => {
             return res.status(404).json({ message: "ไม่พบผู้ใช้" });
         }
         const user = rows[0];
-        const profileUrl = user.imageProfile ? `https://webbackend01.onrender.com/${user.imageProfile}` : null;
+        const profileUrl = user.imageProfile ? `https://webbackend01.onrender.com${user.imageProfile}` : null;
         return res.status(200).json({
             id: user.id,
             username: user.username,
