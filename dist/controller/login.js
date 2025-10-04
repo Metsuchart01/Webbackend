@@ -27,6 +27,7 @@ exports.router.post("/", async (req, res) => {
             }
             // ✅ ถ้าถูกต้อง — ส่งข้อมูลกลับ
             return res.status(200).json({
+                status: "200",
                 message: "เข้าสู่ระบบสำเร็จ",
                 user: {
                     id: user.id,
@@ -39,6 +40,7 @@ exports.router.post("/", async (req, res) => {
     }
     catch (error) {
         return res.status(500).json({
+            status: "500",
             message: "เกิดข้อผิดพลาดในการเข้าสู่ระบบ",
             error: error.message
         });

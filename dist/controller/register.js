@@ -25,10 +25,11 @@ exports.router.post("/", upload_1.upload.single("profile"), async (req, res) => 
         }
         const profilepath = req.file ? `/uploads/${req.file.filename}` : null;
         const [result] = await dbConnecDatabase_1.conn.query("insert into users(username,email,phone,password_hash,imageProfile) values(?,?,?,?,?)", [username, email, phone, hashPassword, profilepath]);
-        return res.status(200).json({ message: "สมัครสมาชิกสำเร็จ", userId: result.insertId, profile: profilepath });
+        return res.status(200).json({ status: "200", message: "สมัครสมาชิกสำเร็จ", userId: result.insertId, profile: profilepath });
     }
     catch (error) {
         return res.status(500).json({
+            status: "500",
             message: "เกิดข้อผิดพลาดในการลงทะเบียน",
             error: error.message // <-- แก้ตรงนี้
         });
