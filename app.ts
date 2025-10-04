@@ -9,6 +9,7 @@ import path from "path";
 
 export const app = express();
 app.use(express.json());
+app.use(cor());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/", index);
