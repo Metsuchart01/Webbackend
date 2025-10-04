@@ -17,7 +17,7 @@ router.get("/:id", async (req, res) => {
         }
 
         const user = (rows as any[])[0];
-        const profileUrl = user.imageProfile ? `http://localhost:3309${user.imageProfile}` : null;
+        const profileUrl = user.imageProfile ? `https://webbackend01.onrender.com/${user.imageProfile}` : null;
 
         return res.status(200).json({
             id: user.id,
