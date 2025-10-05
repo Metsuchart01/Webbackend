@@ -12,7 +12,7 @@ export const jwtAuthen = expressjwt({
 });
 export function generateToken(payload: any): string {
     return jwt.sign(payload, secret, {
-        expiresIn: "30d", // หมดอายุ 30 วัน
+        expiresIn: "30m", // หมดอายุ 30 วัน
         issuer: "CS-MSU",
     });
 }

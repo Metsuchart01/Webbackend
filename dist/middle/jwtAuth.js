@@ -19,7 +19,7 @@ exports.jwtAuthen = (0, express_jwt_1.expressjwt)({
 });
 function generateToken(payload) {
     return jsonwebtoken_1.default.sign(payload, secret, {
-        expiresIn: "30d", // หมดอายุ 30 วัน
+        expiresIn: "30m", // หมดอายุ 30 วัน
         issuer: "CS-MSU",
     });
 }
