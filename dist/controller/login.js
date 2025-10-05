@@ -7,6 +7,7 @@ exports.router = void 0;
 const express_1 = __importDefault(require("express"));
 const dbConnecDatabase_1 = require("../dbConnecDatabase");
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const jwtAuth_1 = require("../middle/jwtAuth");
 exports.router = express_1.default.Router();
 exports.router.post("/", async (req, res) => {
     const { email, password } = req.body;
@@ -25,17 +26,16 @@ exports.router.post("/", async (req, res) => {
             if (!passwordMatch) {
                 return res.status(401).json({ message: "รหัสผ่านไม่ถูกต้อง" });
             }
+            const token = (0, jwtAuth_1.generateToken)({ id: user.id, email: user.email });
             // ✅ ถ้าถูกต้อง — ส่งข้อมูลกลับ
             return res.status(200).json({
                 status: "200",
                 message: "เข้าสู่ระบบสำเร็จ",
+                token: token,
                 user: {
                     id: user.id,
                 }
             });
-        }
-        else {
-            return res.status(400).json({ message: "ไม่มี email นี้ในระบบ !!" });
         }
     }
     catch (error) {
