@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import { User } from "../model/user";
 import e from "cors";
 import { stat } from "fs";
+import { generateToken } from "../middle/jwtAuth";
 
 export const router = express.Router();
 
@@ -32,16 +33,16 @@ router.post("/", async (req, res) => {
                 return res.status(401).json({ message: "รหัสผ่านไม่ถูกต้อง" });
             }
 
+            const token = generateToken({ id: user.id, email: user.email });
             // ✅ ถ้าถูกต้อง — ส่งข้อมูลกลับ
             return res.status(200).json({
                 status: "200",
                 message: "เข้าสู่ระบบสำเร็จ",
+                token: token,
                 user: {
                     id: user.id,
                 }
             });
-        } else {
-            return res.status(400).json({ message: "ไม่มี email นี้ในระบบ !!" });
         }
     } catch (error) {
         return res.status(500).json({
