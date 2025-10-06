@@ -11,7 +11,7 @@ exports.router = express_1.default.Router();
 exports.router.get("/:id", async (req, res) => {
     const userId = req.params.id;
     try {
-        const [rows] = await dbConnecDatabase_1.conn.query("SELECT id, username, email, phone, imageProfile FROM users WHERE id = ?", [userId]);
+        const [rows] = await dbConnecDatabase_1.conn.query("SELECT id, username, email, phone, imageProfile,role FROM users WHERE id = ?", [userId]);
         if (rows.length === 0) {
             return res.status(404).json({ message: "ไม่พบผู้ใช้" });
         }
@@ -22,7 +22,8 @@ exports.router.get("/:id", async (req, res) => {
             username: user.username,
             email: user.email,
             phone: user.phone,
-            profileUrl
+            profileUrl,
+            role: user.role
         });
     }
     catch (error) {

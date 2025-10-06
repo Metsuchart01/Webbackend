@@ -8,7 +8,7 @@ router.get("/:id", async (req, res) => {
     const userId = req.params.id;
     try {
         const [rows] = await conn.query(
-            "SELECT id, username, email, phone, imageProfile FROM users WHERE id = ?",
+            "SELECT id, username, email, phone, imageProfile,role FROM users WHERE id = ?",
             [userId]
         );
 
@@ -24,7 +24,8 @@ router.get("/:id", async (req, res) => {
             username: user.username,
             email: user.email,
             phone: user.phone,
-            profileUrl
+            profileUrl,
+            role: user.role
         });
     } catch (error) {
         return res.status(500).json({ message: "เกิดข้อผิดพลาด", error });
