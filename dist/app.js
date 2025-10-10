@@ -11,6 +11,7 @@ const login_1 = require("./controller/login");
 const index_1 = require("./controller/index");
 const user_1 = require("./controller/user");
 const updateuser_1 = require("./controller/updateuser");
+const game_1 = require("./controller/game");
 const path_1 = __importDefault(require("path"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
@@ -22,6 +23,7 @@ exports.app.use("/uploads", express_1.default.static(path_1.default.join(__dirna
 exports.app.use("/", index_1.router);
 exports.app.use("/register", register_1.router);
 exports.app.use("/login", login_1.router);
+exports.app.use("/game", game_1.router);
 exports.app.use(jwtAuth_1.jwtAuthen); // ตรวจสอบ JWT ก่อนเข้าถึง route ที่ไม่ได้ยกเว้น
 exports.app.use("/user", user_1.router);
 exports.app.use("/updateuser", updateuser_1.router);
