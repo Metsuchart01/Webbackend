@@ -5,6 +5,22 @@ import { upload } from "../middle/upload";
 
 export const router = express.Router();
 
+router.get("/", async (req, res) => {
+
+    const [rows] = await conn.query('select  id, username, email, phone, imageProfile,role from users')
+    const user = (rows as any[])[0];
+    const profileUrl = user.imageProfile ? `https://webbackend01.onrender.com${user.imageProfile}` : null;
+    return res.status(200).json({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        profileUrl,
+        role: user.role
+    });
+
+})
+
 router.get("/:id", async (req, res) => {
     const userId = req.params.id;
     try {

@@ -8,6 +8,19 @@ exports.router = void 0;
 const express_1 = __importDefault(require("express"));
 const dbConnecDatabase_1 = require("../dbConnecDatabase");
 exports.router = express_1.default.Router();
+exports.router.get("/", async (req, res) => {
+    const [rows] = await dbConnecDatabase_1.conn.query('select  id, username, email, phone, imageProfile,role from users');
+    const user = rows[0];
+    const profileUrl = user.imageProfile ? `https://webbackend01.onrender.com${user.imageProfile}` : null;
+    return res.status(200).json({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        profileUrl,
+        role: user.role
+    });
+});
 exports.router.get("/:id", async (req, res) => {
     const userId = req.params.id;
     try {
