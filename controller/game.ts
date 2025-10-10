@@ -83,7 +83,7 @@ router.put("/:id", upload.single("imageGame"), async (req, res) => {
 
         return res.status(200).json({
             message: "อัปเดตเกมสำเร็จ",
-            imageUrl: imageGame ? `https://webbackend01.onrender.com${imageGame}` : null
+            imageGame: imageGame ? `https://webbackend01.onrender.com${imageGame}` : null
         });
     } catch (error) {
         console.error(error);
