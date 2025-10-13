@@ -16,7 +16,7 @@ exports.router.get("", async (req, res) => {
         `);
         const games = rows.map(game => ({
             gid: game.gid,
-            nameGame: game.nameGame,
+            nameGame: game.NameGame,
             price: game.price,
             type: game.type,
             imageGame: game.imageGame ? `https://webbackend01.onrender.com${game.imageGame}` : null,
@@ -45,7 +45,7 @@ exports.router.get("/:id", async (req, res) => {
             status: 200,
             games: {
                 gid: game.gid,
-                nameGame: game.nameGame,
+                nameGame: game.NameGame,
                 price: game.price,
                 type: game.type,
                 imageGame: imageGameUrl,
