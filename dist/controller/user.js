@@ -109,7 +109,13 @@ exports.router.patch("/:id/sales", async (req, res) => {
 exports.router.get("/:id/topup", async (req, res) => {
     const { id } = req.params;
     try {
-        const [topups] = await dbConnecDatabase_1.conn.query("select * from topup where user_id = ?", [id]);
+        const [rows] = await dbConnecDatabase_1.conn.query("select * from topup t JOIN users u ON t.user_id = u.id where user_id = ?", [id]);
+        const topups = rows.map(topup => ({
+            user_id: topup.user_id,
+            username: topup.username,
+            amount: topup.amount,
+            topup_date: topup.topup_date
+        }));
         res.status(200).json(topups);
     }
     catch (error) {
@@ -120,7 +126,7 @@ exports.router.get("/:id/topup", async (req, res) => {
 exports.router.get("/:id/sales", async (req, res) => {
     const { id } = req.params;
     try {
-        const [sales] = await dbConnecDatabase_1.conn.query(`SELECT 
+        const [rows] = await dbConnecDatabase_1.conn.query(`SELECT 
          s.id, s.user_id, u.username,
          g.NameGame, g.price, g.imageGame,
          s.purchase_date
@@ -128,6 +134,14 @@ exports.router.get("/:id/sales", async (req, res) => {
        JOIN game g ON s.game_id = g.gid
        JOIN users u ON s.user_id = u.id
        WHERE s.user_id = ?`, [id]);
+        const sales = rows.map(sale => ({
+            id: sale.id,
+            user_id: sale.user_id,
+            username: sale.username,
+            NameGame: sale.NameGame,
+            price: sale.price,
+            purchase_date: sale.purchase_date
+        }));
         res.status(200).json(sales);
     }
     catch (error) {

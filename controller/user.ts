@@ -149,7 +149,17 @@ router.get("/:id/topup", async (req, res) => {
     const { id } = req.params;
     try {
 
-        const [topups] = await conn.query("select * from topup where user_id = ?", [id])
+        const [rows] = await conn.query("select * from topup t JOIN users u ON t.user_id = u.id where user_id = ?", [id])
+
+        const topups = (rows as any[]).map(topup => ({
+
+            user_id: topup.user_id,
+            username: topup.username,
+            amount: topup.amount,
+            topup_date: topup.topup_date
+
+
+        }));
         res.status(200).json(topups);
 
     } catch (error) {
@@ -162,7 +172,7 @@ router.get("/:id/topup", async (req, res) => {
 router.get("/:id/sales", async (req, res) => {
     const { id } = req.params;
     try {
-        const [sales] = await conn.query(
+        const [rows] = await conn.query(
             `SELECT 
          s.id, s.user_id, u.username,
          g.NameGame, g.price, g.imageGame,
@@ -173,7 +183,17 @@ router.get("/:id/sales", async (req, res) => {
        WHERE s.user_id = ?`,
             [id]
         );
+        const sales = (rows as any[]).map(sale => ({
 
+            id: sale.id,
+            user_id: sale.user_id,
+            username: sale.username,
+            NameGame: sale.NameGame,
+            price: sale.price,
+            purchase_date: sale.purchase_date
+
+
+        }));
         res.status(200).json(sales);
     } catch (error) {
         console.error("Sales error:", error);
