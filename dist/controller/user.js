@@ -70,4 +70,69 @@ exports.router.patch("/:id/topup", async (req, res) => {
         res.status(500).json({ message: "เกิดข้อผิดพลาด", error });
     }
 });
+exports.router.patch("/:id/sales", async (req, res) => {
+    const { id } = req.params;
+    const { gid } = req.body;
+    try {
+        // 1. ดึงราคาเกม
+        const [gameRows] = await dbConnecDatabase_1.conn.query("SELECT price FROM game WHERE gid = ?", [gid]);
+        if (gameRows.length === 0) {
+            return res.status(404).json({ message: "ไม่พบเกมที่เลือก" });
+        }
+        const price = gameRows[0].price;
+        // 2. ตรวจสอบเงินผู้ใช้
+        const [userRows] = await dbConnecDatabase_1.conn.query("SELECT money FROM users WHERE id = ?", [id]);
+        if (userRows.length === 0) {
+            return res.status(404).json({ message: "ไม่พบผู้ใช้" });
+        }
+        const currentMoney = userRows[0].money;
+        if (currentMoney < price) {
+            return res.status(400).json({ message: "ยอดเงินไม่เพียงพอ" });
+        }
+        // 3. หักเงิน
+        await dbConnecDatabase_1.conn.query("UPDATE users SET money = money - ? WHERE id = ?", [price, id]);
+        // 4. บันทึกการซื้อ
+        await dbConnecDatabase_1.conn.query("INSERT INTO sales (user_id, game_id, purchase_date) VALUES (?, ?, NOW())", [id, gid]);
+        // 5. ส่งข้อมูลผู้ใช้กลับ
+        const [updatedUserRows] = await dbConnecDatabase_1.conn.query("SELECT id, username, email, phone, money FROM users WHERE id = ?", [id]);
+        const user = updatedUserRows[0];
+        res.json({
+            message: "ซื้อเกมสำเร็จ",
+            user
+        });
+    }
+    catch (error) {
+        console.error("Purchase error:", error);
+        res.status(500).json({ message: "เกิดข้อผิดพลาด", error });
+    }
+});
+exports.router.get("/:id/topup", async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [topups] = await dbConnecDatabase_1.conn.query("select * from topup where user_id = ?", [id]);
+        res.status(200).json(topups);
+    }
+    catch (error) {
+        console.error("Topup error:", error);
+        res.status(500).json({ message: "เกิดข้อผิดพลาด", error });
+    }
+});
+exports.router.get("/:id/sales", async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [sales] = await dbConnecDatabase_1.conn.query(`SELECT 
+         s.id, s.user_id, u.username,
+         g.NameGame, g.price, g.imageGame,
+         s.purchase_date
+       FROM sales s
+       JOIN game g ON s.game_id = g.gid
+       JOIN users u ON s.user_id = u.id
+       WHERE s.user_id = ?`, [id]);
+        res.status(200).json(sales);
+    }
+    catch (error) {
+        console.error("Sales error:", error);
+        res.status(500).json({ message: "เกิดข้อผิดพลาด", error });
+    }
+});
 //# sourceMappingURL=user.js.map
