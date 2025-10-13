@@ -54,40 +54,63 @@ router.patch("/:id/topup", async (req, res) => {
     const { id } = req.params;
     const { amount } = req.body;
 
-    try {
-        if (!amount || isNaN(amount)) {
-            return res.status(400).json({ message: "กรุณาระบุจำนวนเงินที่ถูกต้อง" });
-        }
+    if (!amount || isNaN(amount)) {
+        return res.status(400).json({ message: "กรุณาระบุจำนวนเงินที่ถูกต้อง" });
+    }
 
-        // ✅ เพิ่มเงินเข้าในช่อง money
-        const [result]: any = await conn.query(
-            "UPDATE users SET money = money + ? WHERE id = ?",
-            [amount, id]
+    const connection = await conn.getConnection(); // ใช้ mysql2/promise
+    try {
+        // เริ่ม Transaction
+        await connection.beginTransaction();
+
+        // ล็อก row ของผู้ใช้ ป้องกัน Race Condition
+        const [rows]: any = await connection.query(
+            "SELECT money FROM users WHERE id = ? FOR UPDATE",
+            [id]
         );
 
-        if (result.affectedRows === 0) {
+        if (rows.length === 0) {
+            await connection.rollback();
             return res.status(404).json({ message: "ไม่พบผู้ใช้" });
         }
 
-        await conn.query("INSERT INTO topup (user_id, amount) VALUES (?, ?)", [id, amount]
-        )
+        const currentMoney = rows[0].money;
+        const newMoney = currentMoney + amount;
 
-        // ✅ ดึงข้อมูลใหม่กลับมา
-        const [rows]: any = await conn.query(
+        // อัปเดตยอดเงิน
+        await connection.query(
+            "UPDATE users SET money = ? WHERE id = ?",
+            [newMoney, id]
+        );
+
+        // บันทึกประวัติ topup
+        await connection.query(
+            "INSERT INTO topup (user_id, amount, topup_date) VALUES (?, ?, NOW())",
+            [id, amount]
+        );
+
+        // commit transaction
+        await connection.commit();
+
+        // ดึงข้อมูลใหม่กลับมา
+        const [updatedRows]: any = await connection.query(
             "SELECT id, username, email, phone, money FROM users WHERE id = ?",
             [id]
         );
-        const user = rows[0];
 
         res.json({
             message: "เติมเงินสำเร็จ",
-            user
+            user: updatedRows[0],
         });
     } catch (error) {
+        await connection.rollback(); // rollback ถ้ามี error
         console.error("Topup error:", error);
         res.status(500).json({ message: "เกิดข้อผิดพลาด", error });
+    } finally {
+        connection.release();
     }
 });
+
 
 router.patch("/:id/sales", async (req, res) => {
     const { id } = req.params;
