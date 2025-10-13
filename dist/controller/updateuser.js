@@ -23,7 +23,7 @@ exports.router.put("/:id", upload_1.upload.single("profile"), async (req, res) =
         // ถ้าอัพโหลดรูปใหม่
         let profilePath = user.imageProfile;
         if (req.file) {
-            profilePath = `/uploads/${req.file.filename}`;
+            profilePath = `/uploads/imageProfile/${req.file.filename}`;
         }
         // อัพเดตข้อมูล
         await dbConnecDatabase_1.conn.query("UPDATE users SET username = ?, email = ?, phone = ?, imageProfile = ? WHERE id = ?", [username, email, phone, profilePath, userId]);

@@ -14,14 +14,52 @@ exports.router.get("", async (req, res) => {
             SELECT *
             FROM game 
         `);
-        res.json(rows); // ต้องส่ง response กลับ client
+        const games = rows.map(game => ({
+            gid: game.gid,
+            NameGame: game.nameGame,
+            price: game.price,
+            type: game.type,
+            imageGame: game.imageGame ? `https://webbackend01.onrender.com${game.imageGame}` : null,
+            Description: game.Description,
+        }));
+        res.status(200).json({
+            status: 200, games
+        });
     }
     catch (error) {
         console.error(error);
         res.status(500).json({ error: "Something went wrong" });
     }
 });
-exports.router.get("/rank", async (req, res) => {
+exports.router.get("/:id", async (req, res) => {
+    const gameId = req.params.id;
+    try {
+        const [rows] = await dbConnecDatabase_1.conn.query(`
+            SELECT *
+            FROM game
+            where gid = ? 
+        `, [gameId]);
+        const game = rows[0];
+        const imageGameUrl = game.imageGame ? `https://webbackend01.onrender.com${game.imageGame}` : null;
+        res.status(200).json({
+            status: 200,
+            games: {
+                gid: game.gid,
+                NameGame: game.nameGame,
+                price: game.price,
+                type: game.type,
+                imageGame: imageGameUrl,
+                Description: game.Description,
+                create_at: game.create_at
+            }
+        }); // ต้องส่ง response กลับ client
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Something went wrong" });
+    }
+});
+exports.router.get("/game/rank", async (req, res) => {
     try {
         const [rows] = await dbConnecDatabase_1.conn.query(`
             SELECT g.gid, g.nameGame, g.price, g.type, g.imageGame, g.Description,
@@ -31,16 +69,31 @@ exports.router.get("/rank", async (req, res) => {
             GROUP BY g.gid, g.nameGame, g.price, g.type, g.imageGame, g.Description
             ORDER BY total_sales DESC
             LIMIT 5;
+            
         `);
-        res.json(rows); // ต้องส่ง response กลับ client
+        const games = rows.map((game, index) => ({
+            rank: index + 1,
+            gid: game.gid,
+            nameGame: game.nameGame,
+            price: game.price,
+            type: game.type,
+            imageGame: game.imageGame ? `https://webbackend01.onrender.com${game.imageGame}` : null,
+            Description: game.Description,
+            total_sales: game.total_sales
+        }));
+        res.status(200).json({
+            status: 200,
+            games
+        }); // ต้องส่ง response กลับ client
     }
     catch (error) {
         console.error(error);
         res.status(500).json({ error: "Something went wrong" });
     }
 });
-exports.router.post("/add", async (req, res) => {
-    const { nameGame, price, type, imageGame, Description } = req.body;
+exports.router.post("/add", upload_1.upload.single("imageGame"), async (req, res) => {
+    const { nameGame, price, type, Description } = req.body;
+    const imageGame = req.file ? `/uploads/imageGame/${req.file.filename}` : null;
     try {
         const [result] = await dbConnecDatabase_1.conn.query("INSERT INTO game (nameGame, price, type, imageGame, Description) VALUES (?, ?, ?, ?, ?)", [nameGame, price, type, imageGame, Description]);
         res.json({ message: "Game added successfully", id: result.insertId });
@@ -61,7 +114,7 @@ exports.router.put("/:id", upload_1.upload.single("imageGame"), async (req, res)
             return res.status(404).json({ message: "ไม่พบเกม" });
         }
         // ถ้ามีไฟล์อัปโหลดใหม่
-        const imageGame = req.file ? `/uploads/${req.file.filename}` : game.imageGame;
+        const imageGame = req.file ? `/uploads/imageGame/${req.file.filename}` : game.imageGame;
         // อัปเดตข้อมูลเกม
         await dbConnecDatabase_1.conn.query("UPDATE game SET nameGame=?, price=?, type=?, Description=?, imageGame=? WHERE gid=?", [nameGame, price, type, Description, imageGame, gameId]);
         return res.status(200).json({

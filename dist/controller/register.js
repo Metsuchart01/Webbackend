@@ -15,7 +15,7 @@ const uploadsDir = path_1.default.join(__dirname, "../uploads");
 if (!fs_1.default.existsSync(uploadsDir)) {
     fs_1.default.mkdirSync(uploadsDir, { recursive: true });
 }
-exports.router.post("/", upload_1.upload.single("profile"), async (req, res) => {
+exports.router.post("/", upload_1.upload.single("imageProfile"), async (req, res) => {
     const { username, email, phone, password, } = req.body;
     try {
         const hashPassword = await bcrypt_1.default.hash(password, 10); //await bcrypt.hash(password,10);
@@ -23,7 +23,7 @@ exports.router.post("/", upload_1.upload.single("profile"), async (req, res) => 
         if (row.length > 0) {
             return res.status(400).json({ message: "Email มีคนใช้ไปแล้ว !! " });
         }
-        const profilepath = req.file ? `/uploads/${req.file.filename}` : null;
+        const profilepath = req.file ? `/uploads/imageProfile/${req.file.filename}` : null;
         const [result] = await dbConnecDatabase_1.conn.query("insert into users(username,email,phone,password_hash,imageProfile) values(?,?,?,?,?)", [username, email, phone, hashPassword, profilepath]);
         return res.status(200).json({ status: "200", message: "สมัครสมาชิกสำเร็จ", userId: result.insertId, profile: profilepath });
     }

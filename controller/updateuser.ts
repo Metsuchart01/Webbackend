@@ -22,7 +22,7 @@ router.put("/:id", upload.single("profile"), async (req, res) => {
         // ถ้าอัพโหลดรูปใหม่
         let profilePath = user.imageProfile;
         if (req.file) {
-            profilePath = `/uploads/${req.file.filename}`;
+            profilePath = `/uploads/imageProfile/${req.file.filename}`;
         }
 
         // อัพเดตข้อมูล
