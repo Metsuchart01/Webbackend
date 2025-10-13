@@ -19,6 +19,7 @@ router.get("", async (req, res) => {
             type: game.type,
             imageGame: game.imageGame ? `https://webbackend01.onrender.com${game.imageGame}` : null,
             Description: game.Description,
+            create_at: game.create_at
 
         }));
 
@@ -91,6 +92,7 @@ router.get("/game/rank", async (req, res) => {
             type: game.type,
             imageGame: game.imageGame ? `https://webbackend01.onrender.com${game.imageGame}` : null,
             Description: game.Description,
+            create_at: game.create_at,
             total_sales: game.total_sales
         }));
 
@@ -120,9 +122,6 @@ router.post("/add", upload.single("imageGame"), async (req, res) => {
         res.status(500).json({ error: "Something went wrong" });
     }
 });
-
-
-
 
 router.put("/:id", upload.single("imageGame"), async (req, res) => {
     const gameId = req.params.id;
@@ -166,5 +165,36 @@ router.delete("/:id", async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Something went wrong" });
+    }
+});
+
+router.post("/game/search", async (req, res) => {
+    const { nameGame = "", type = "" } = req.body;
+
+    try {
+        const [rows] = await conn.query(
+            `SELECT * FROM game
+       WHERE nameGame LIKE ? AND type LIKE ?`,
+            [`%${nameGame}%`, `%${type}%`]
+        );
+
+
+        const games = (rows as any[]).map(game => ({
+            gid: game.gid,
+            nameGame: game.NameGame,
+            price: game.price,
+            type: game.type,
+            imageGame: game?.imageGame
+                ? `https://webbackend01.onrender.com${game.imageGame}`
+                : null,
+
+            Description: game.Description,
+            create_at: game.create_at,
+        }));
+
+        res.status(200).json(games);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "เกิดข้อผิดพลาดในการค้นหา" });
     }
 });
