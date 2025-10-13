@@ -6,20 +6,18 @@ import { upload } from "../middle/upload";
 export const router = express.Router();
 
 router.get("/", async (req, res) => {
-
-    const [rows] = await conn.query('select  id, username, email, phone, imageProfile,role from users')
-    const user = (rows as any[])[0];
-    const profileUrl = user.imageProfile ? `https://webbackend01.onrender.com${user.imageProfile}` : null;
-    return res.status(200).json({
+    const [rows] = await conn.query('select  id, username, email, phone, imageProfile, role from users');
+    const users = (rows as any[]).map(user => ({
         id: user.id,
         username: user.username,
         email: user.email,
         phone: user.phone,
-        profileUrl,
+        profileUrl: user.imageProfile ? `https://webbackend01.onrender.com${user.imageProfile}` : null,
         role: user.role
-    });
+    }));
+    return res.status(200).json(users); // ✅ คืนเป็น Array
+});
 
-})
 
 
 router.get("/:id", async (req, res) => {
