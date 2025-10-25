@@ -8,6 +8,7 @@ import { router as updateuser } from "./controller/updateuser";
 import { router as game } from "./controller/game";
 import { router as cart } from "./controller/cart";
 
+import { router as code } from "./controller/code";
 import path from "path";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -24,6 +25,8 @@ app.use("/register", register);
 app.use("/login", login);
 app.use("/game", game);
 app.use("/cart", cart);
+app.use("/game", game);
+app.use("/code", code);
 app.use(jwtAuthen); // ตรวจสอบ JWT ก่อนเข้าถึง route ที่ไม่ได้ยกเว้น
 
 app.use("/user", user);
