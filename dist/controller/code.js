@@ -43,6 +43,46 @@ exports.router.get("/", async (req, res) => {
         return res.status(500).json({ message: "Error fetching discount codes" });
     }
 });
+exports.router.get("/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [rows] = await dbConnecDatabase_1.conn.query(`
+      SELECT 
+        d.cid,
+        d.Code,
+        d.Description,
+        d.DiscountType,
+        d.DiscountValue,
+        d.MaxUsage,
+        d.UserLimit,
+        d.isActive,
+        COUNT(u.cid) AS discountUsage
+      FROM DiscountCodes d
+      LEFT JOIN DiscountUsage u ON d.cid = u.cid
+      WHERE d.cid = ?
+      GROUP BY d.cid
+    `, [id]);
+        if (!rows.length) {
+            return res.status(404).json({ message: "Discount code not found" });
+        }
+        const code = rows[0];
+        res.status(200).json({
+            cid: code.cid,
+            code: code.Code,
+            description: code.Description,
+            discountType: code.DiscountType,
+            discountValue: code.DiscountValue,
+            maxUsage: code.MaxUsage,
+            userLimit: code.UserLimit,
+            isActive: !!code.isActive,
+            discountUsage: code.discountUsage
+        });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching discount code" });
+    }
+});
 exports.router.post("/", upload_1.upload.none(), async (req, res) => {
     try {
         console.log(req.body); // ตรวจสอบว่ามีค่า
