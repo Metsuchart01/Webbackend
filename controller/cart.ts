@@ -124,82 +124,109 @@ router.delete("/:userId/:gameId", async (req, res) => {
 });
 
 /* ---------------- ซื้อเกมทั้งหมดในตะกร้า ---------------- */
-router.post("/:userId/checkout", async (req, res) => {
+router.post("/checkout/:userId", async (req, res) => {
   const { userId } = req.params;
-  const { discountCode } = req.body;
+  const { discountCode, total } = req.body;
 
   const connection = await conn.getConnection();
   try {
     await connection.beginTransaction();
 
-    // โหลดตะกร้า
-    const [cartItems]: any = await connection.query(
+    // โหลดรายการในตะกร้า
+    const [cart]: any = await connection.query(
       `SELECT c.gid, g.price, c.quantity
        FROM Newwcart c
        JOIN game g ON c.gid = g.gid
-       WHERE c.id=?`,
-      [userId]
-    );
-    if (cartItems.length === 0) {
-      await connection.rollback();
-      return res.status(400).json({ message: "ไม่มีสินค้าในตะกร้า" });
-    }
-
-    // รวมราคา
-    let total = cartItems.reduce(
-      (sum: number, item: any) => sum + item.price * item.quantity,
-      0
+       WHERE c.id = ?`, [userId]
     );
 
-    // ใช้โค้ดส่วนลด
-    if (discountCode) {
-      const [codes]: any = await connection.query(
-        "SELECT * FROM DiscountCodes WHERE Code=? AND isActive=1",
-        [discountCode]
-      );
-      if (codes.length > 0) {
-        const code = codes[0];
-        if (code.DiscountType === "percent") {
-          total = total - (total * code.DiscountValue) / 100;
-        } else if (code.DiscountType === "amount") {
-          total = total - code.DiscountValue;
-        }
-        if (total < 0) total = 0;
-      }
+    if (cart.length === 0) {
+      await connection.rollback();
+      return res.status(400).json({ message: "ตะกร้าว่าง" });
     }
 
-    // เช็คเงินผู้ใช้
-    const [users]: any = await connection.query("SELECT money FROM users WHERE id=?", [userId]);
-    if (users.length === 0) {
-      await connection.rollback();
-      return res.status(404).json({ message: "ไม่พบผู้ใช้" });
+    // คำนวณยอดรวม
+    let totalPrice = cart.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0);
+
+    // ถ้า frontend ส่ง total มา (เช่นหักโค้ดแล้ว) ใช้แทน
+    if (total && total < totalPrice) {
+      totalPrice = total;
     }
-    if (users[0].money < total) {
+
+    // ตรวจสอบเงินผู้ใช้
+    const [users]: any = await connection.query("SELECT money FROM users WHERE id = ?", [userId]);
+    if (users.length === 0 || users[0].money < totalPrice) {
       await connection.rollback();
-      return res.status(400).json({ message: "ยอดเงินไม่พอ" });
+      return res.status(400).json({ message: "ยอดเงินไม่เพียงพอ" });
     }
 
     // หักเงิน
-    await connection.query("UPDATE users SET money = money - ? WHERE id=?", [total, userId]);
+    await connection.query("UPDATE users SET money = money - ? WHERE id = ?", [totalPrice, userId]);
 
-    // บันทึกการซื้อทีละเกม
-    for (const item of cartItems) {
+    // เพิ่มเข้า sales
+    for (const item of cart) {
       await connection.query(
-        "INSERT INTO sales (user_id, game_id, purchase_date) VALUES (?, ?, NOW())",
-        [userId, item.gid]
+        "INSERT INTO sales (user_id, game_id, quantity, purchase_date) VALUES (?, ?, ?, NOW())",
+        [userId, item.gid, item.quantity]
       );
     }
 
-    // ลบตะกร้า
-    await connection.query("DELETE FROM Newwcart WHERE id=?", [userId]);
+    // ล้างตะกร้า
+    await connection.query("DELETE FROM Newwcart WHERE id = ?", [userId]);
 
     await connection.commit();
-    res.json({ message: "ซื้อเกมทั้งหมดสำเร็จ", total });
+    res.json({ message: "ซื้อสำเร็จ", totalPaid: totalPrice });
   } catch (err) {
     await connection.rollback();
     console.error("Checkout error:", err);
     res.status(500).json({ message: "เกิดข้อผิดพลาด", error: err });
   } finally {
     connection.release();
+  }
+});
+
+
+
+// ✅ ตรวจสอบโค้ดส่วนลด
+router.post("/validate-discount", async (req, res) => {
+  const { code, total, userId } = req.body;
+
+  try {
+    // 1. หาโค้ดจาก DB
+    const [rows]: any = await conn.query(
+      "SELECT * FROM DiscountCodes WHERE Code=? AND isActive=1",
+      [code]
+    );
+    if (rows.length === 0) {
+      return res.json({ valid: false, message: "โค้ดไม่ถูกต้อง" });
+    }
+    const discount = rows[0];
+
+    // 2. เช็คจำนวนการใช้งาน
+    const [usage]: any = await conn.query(
+      "SELECT COUNT(*) as used FROM DiscountUsage WHERE cid=? AND user_id=?",
+      [discount.cid, userId]
+    );
+    if (usage[0].used >= discount.UserLimit) {
+      return res.json({ valid: false, message: "คุณใช้โค้ดนี้ครบจำนวนแล้ว" });
+    }
+
+    // 3. คำนวณส่วนลด
+    let newTotal = total;
+    if (discount.DiscountType === "percent") {
+      newTotal = total - (total * discount.DiscountValue) / 100;
+    } else if (discount.DiscountType === "fixed") {
+      newTotal = Math.max(total - discount.DiscountValue, 0);
+    }
+
+    return res.json({
+      valid: true,
+      discountType: discount.DiscountType,
+      discountValue: discount.DiscountValue,
+      newTotal,
+    });
+  } catch (err) {
+    console.error("Validate discount error:", err);
+    res.status(500).json({ valid: false, message: "เกิดข้อผิดพลาด" });
   }
 });
