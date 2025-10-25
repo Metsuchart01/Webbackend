@@ -6,6 +6,7 @@ import { router as index } from "./controller/index";
 import { router as user } from "./controller/user";
 import { router as updateuser } from "./controller/updateuser";
 import { router as game } from "./controller/game";
+import { router as cart } from "./controller/cart";
 
 import path from "path";
 import jwt from "jsonwebtoken";
@@ -21,7 +22,8 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/", index);
 app.use("/register", register);
 app.use("/login", login);
-app.use("/game", game)
+app.use("/game", game);
+app.use("/cart", cart);
 app.use(jwtAuthen); // ตรวจสอบ JWT ก่อนเข้าถึง route ที่ไม่ได้ยกเว้น
 
 app.use("/user", user);
