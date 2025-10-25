@@ -3,11 +3,7 @@ import { conn } from "../dbConnecDatabase";
 
 export const router = express.Router();
 
-/**
- * ➕ เพิ่มเกมเข้าตะกร้า
- * POST /cart/add
- * body: { userId, gameId, quantity }
- */
+// ➕ เพิ่มเกมเข้าตะกร้า
 router.post("/add", async (req, res) => {
   const { userId, gameId, quantity } = req.body;
 
@@ -16,14 +12,14 @@ router.post("/add", async (req, res) => {
   }
 
   try {
-    // ตรวจสอบว่ามีเกมนี้อยู่ในตะกร้าแล้วหรือยัง
+    // ตรวจสอบว่ามีอยู่แล้วหรือยัง
     const [rows]: any = await conn.query(
       "SELECT * FROM Newwcart WHERE id=? AND gid=?",
       [userId, gameId]
     );
 
     if (rows.length > 0) {
-      // ถ้ามีแล้ว → update quantity
+      // ถ้ามีแล้ว → อัปเดตจำนวน
       await conn.query(
         "UPDATE Newwcart SET quantity = quantity + ? WHERE id=? AND gid=?",
         [quantity || 1, userId, gameId]
@@ -43,16 +39,13 @@ router.post("/add", async (req, res) => {
   }
 });
 
-/**
- * 📋 ดูตะกร้าของ user
- * GET /cart/:userId
- */
+// 📋 ดูตะกร้าของผู้ใช้
 router.get("/:userId", async (req, res) => {
   const { userId } = req.params;
 
   try {
     const [rows]: any = await conn.query(
-      `SELECT c.cart_id, g.NameGame, g.price, c.quantity, g.imageGame,
+      `SELECT c.id, c.gid, g.NameGame, g.price, c.quantity, g.imageGame, 
               (g.price * c.quantity) AS total_price
        FROM Newwcart c
        JOIN game g ON c.gid = g.gid
@@ -70,7 +63,7 @@ router.get("/:userId", async (req, res) => {
 
     res.json({
       items: rows,
-      total: total[0]?.total_price || 0
+      total: total[0].total_price || 0
     });
   } catch (err) {
     console.error("Get cart error:", err);
@@ -78,15 +71,15 @@ router.get("/:userId", async (req, res) => {
   }
 });
 
-/**
- * ❌ ลบเกมออกจากตะกร้า
- * DELETE /cart/:cartId
- */
-router.delete("/:cartId", async (req, res) => {
-  const { cartId } = req.params;
+// ❌ ลบเกมออกจากตะกร้า
+router.delete("/:userId/:gameId", async (req, res) => {
+  const { userId, gameId } = req.params;
 
   try {
-    await conn.query("DELETE FROM Newwcart WHERE cart_id = ?", [cartId]);
+    await conn.query(
+      "DELETE FROM Newwcart WHERE id=? AND gid=?",
+      [userId, gameId]
+    );
     res.json({ message: "ลบสินค้าออกจากตะกร้าแล้ว" });
   } catch (err) {
     console.error("Delete cart error:", err);
