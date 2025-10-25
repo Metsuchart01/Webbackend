@@ -3,7 +3,11 @@ import { conn } from "../dbConnecDatabase";
 
 export const router = express.Router();
 
-// ➕ เพิ่มเกมเข้าตะกร้า
+/**
+ * ➕ เพิ่มเกมเข้าตะกร้า
+ * POST /cart/add
+ * body: { userId, gameId, quantity }
+ */
 router.post("/add", async (req, res) => {
   const { userId, gameId, quantity } = req.body;
 
@@ -12,22 +16,22 @@ router.post("/add", async (req, res) => {
   }
 
   try {
-    // เช็คว่า user ใส่เกมนี้ใน cart แล้วหรือยัง
+    // ตรวจสอบว่ามีเกมนี้อยู่ในตะกร้าแล้วหรือยัง
     const [rows]: any = await conn.query(
-      "SELECT * FROM cart WHERE id=? AND gid=?",
+      "SELECT * FROM Newwcart WHERE id=? AND gid=?",
       [userId, gameId]
     );
 
     if (rows.length > 0) {
-      // ถ้ามีอยู่แล้ว → อัปเดตจำนวน
+      // ถ้ามีแล้ว → update quantity
       await conn.query(
-        "UPDATE cart SET quantity = quantity + ? WHERE id=? AND gid=?",
+        "UPDATE Newwcart SET quantity = quantity + ? WHERE id=? AND gid=?",
         [quantity || 1, userId, gameId]
       );
     } else {
       // ถ้ายังไม่มี → insert ใหม่
       await conn.query(
-        "INSERT INTO cart (id, gid, quantity) VALUES (?, ?, ?)",
+        "INSERT INTO Newwcart (id, gid, quantity) VALUES (?, ?, ?)",
         [userId, gameId, quantity || 1]
       );
     }
@@ -39,31 +43,34 @@ router.post("/add", async (req, res) => {
   }
 });
 
-// 📋 ดูตะกร้าของผู้ใช้
+/**
+ * 📋 ดูตะกร้าของ user
+ * GET /cart/:userId
+ */
 router.get("/:userId", async (req, res) => {
   const { userId } = req.params;
 
   try {
     const [rows]: any = await conn.query(
-      `SELECT c.cart_id, g.NameGame, g.price, c.quantity, g.imageGame, 
+      `SELECT c.cart_id, g.NameGame, g.price, c.quantity, g.imageGame,
               (g.price * c.quantity) AS total_price
-       FROM cart c
-       JOIN games g ON c.gid = g.gid
+       FROM Newwcart c
+       JOIN game g ON c.gid = g.gid
        WHERE c.id = ?`,
       [userId]
     );
 
     const [total]: any = await conn.query(
       `SELECT SUM(g.price * c.quantity) AS total_price
-       FROM cart c
-       JOIN games g ON c.gid = g.gid
+       FROM Newwcart c
+       JOIN game g ON c.gid = g.gid
        WHERE c.id = ?`,
       [userId]
     );
 
     res.json({
       items: rows,
-      total: total[0].total_price || 0
+      total: total[0]?.total_price || 0
     });
   } catch (err) {
     console.error("Get cart error:", err);
@@ -71,12 +78,15 @@ router.get("/:userId", async (req, res) => {
   }
 });
 
-// ❌ ลบเกมออกจากตะกร้า
+/**
+ * ❌ ลบเกมออกจากตะกร้า
+ * DELETE /cart/:cartId
+ */
 router.delete("/:cartId", async (req, res) => {
   const { cartId } = req.params;
 
   try {
-    await conn.query("DELETE FROM cart WHERE cart_id = ?", [cartId]);
+    await conn.query("DELETE FROM Newwcart WHERE cart_id = ?", [cartId]);
     res.json({ message: "ลบสินค้าออกจากตะกร้าแล้ว" });
   } catch (err) {
     console.error("Delete cart error:", err);
