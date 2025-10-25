@@ -1,7 +1,6 @@
 import express from "express";
 import { conn } from "../dbConnecDatabase";
 import { upload } from "../middle/upload";
-import { create } from "domain";
 
 export const router = express.Router();
 
