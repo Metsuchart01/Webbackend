@@ -157,6 +157,7 @@ exports.router.get("/:id/sales", async (req, res) => {
        WHERE s.user_id = ?`, [id]);
         const sales = rows.map(sale => ({
             id: sale.id,
+            gameId: sale.game_id,
             user_id: sale.user_id,
             username: sale.username,
             NameGame: sale.NameGame,

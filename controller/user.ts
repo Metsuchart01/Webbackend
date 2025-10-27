@@ -224,6 +224,7 @@ router.get("/:id/sales", async (req, res) => {
         const sales = (rows as any[]).map(sale => ({
 
             id: sale.id,
+            gameId: sale.game_id,
             user_id: sale.user_id,
             username: sale.username,
             NameGame: sale.NameGame,

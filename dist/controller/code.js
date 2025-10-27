@@ -10,7 +10,8 @@ const upload_1 = require("../middle/upload");
 exports.router = express_1.default.Router();
 exports.router.get("/", async (req, res) => {
     try {
-        const [row] = await dbConnecDatabase_1.conn.query(`SELECT 
+        const [rows] = await dbConnecDatabase_1.conn.query(`
+      SELECT 
         d.cid,
         d.Code,
         d.Description,
@@ -19,22 +20,24 @@ exports.router.get("/", async (req, res) => {
         d.MaxUsage,
         d.UserLimit,
         d.isActive,
-        COUNT(u.cid) AS discountUsage
+        COUNT(u.cid) AS discountUsage,
+        COUNT(DISTINCT u.UserId) AS userCount
       FROM DiscountCodes d
       LEFT JOIN DiscountUsage u ON d.cid = u.cid
       GROUP BY d.cid
-      ORDER BY d.cid;`);
-        const codes = row.map(c => ({
+      ORDER BY d.cid;
+    `);
+        const codes = rows.map((c) => ({
             cid: c.cid,
             code: c.Code,
             description: c.Description,
-            discountType: c.DiscountType, // ลดเป็น %
+            discountType: c.DiscountType,
             discountValue: c.DiscountValue,
             maxUsage: c.MaxUsage,
             userLimit: c.UserLimit,
-            //   usedCount: c.,
             isActive: c.isActive,
-            discountUsage: c.discountUsage
+            discountUsage: c.discountUsage, // จำนวนการใช้ทั้งหมด
+            userCount: c.userCount // จำนวนผู้ใช้ที่ใช้โค้ดนี้
         }));
         return res.status(200).json(codes);
     }

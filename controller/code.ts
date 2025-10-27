@@ -6,7 +6,8 @@ export const router = express.Router();
 
 router.get("/", async (req, res) => {
     try {
-        const [row] = await conn.query(`SELECT 
+        const [rows]: any = await conn.query(`
+      SELECT 
         d.cid,
         d.Code,
         d.Description,
@@ -15,30 +16,32 @@ router.get("/", async (req, res) => {
         d.MaxUsage,
         d.UserLimit,
         d.isActive,
-        COUNT(u.cid) AS discountUsage
+        COUNT(u.cid) AS discountUsage,
+        COUNT(DISTINCT u.UserId) AS userCount
       FROM DiscountCodes d
       LEFT JOIN DiscountUsage u ON d.cid = u.cid
       GROUP BY d.cid
-      ORDER BY d.cid;`);
-        const codes = (row as any[]).map(c => ({
+      ORDER BY d.cid;
+    `);
+
+        const codes = rows.map((c: any) => ({
             cid: c.cid,
             code: c.Code,
             description: c.Description,
-            discountType: c.DiscountType,   // ลดเป็น %
+            discountType: c.DiscountType,
             discountValue: c.DiscountValue,
             maxUsage: c.MaxUsage,
             userLimit: c.UserLimit,
-            //   usedCount: c.,
             isActive: c.isActive,
-            discountUsage: c.discountUsage
+            discountUsage: c.discountUsage, // จำนวนการใช้ทั้งหมด
+            userCount: c.userCount          // จำนวนผู้ใช้ที่ใช้โค้ดนี้
         }));
+
         return res.status(200).json(codes);
     } catch (error) {
-
         console.error("Error fetching discount codes:", error);
         return res.status(500).json({ message: "Error fetching discount codes" });
     }
-
 });
 
 router.get("/:id", async (req, res) => {
