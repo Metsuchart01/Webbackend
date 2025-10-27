@@ -171,7 +171,7 @@ exports.router.post("/validate-discount", async (req, res) => {
     const { code, total, userId } = req.body;
     try {
         // 1. หาโค้ดจาก DB
-        const [rows] = await dbConnecDatabase_1.conn.query("SELECT * FROM DiscountCodes WHERE Code=? AND isActive=1", [code]);
+        const [rows] = await dbConnecDatabase_1.conn.query("SELECT * FROM DiscountCodes WHERE Code=? AND IsActive=1", [code]);
         if (rows.length === 0) {
             return res.json({ valid: false, message: "โค้ดไม่ถูกต้อง" });
         }
@@ -183,7 +183,7 @@ exports.router.post("/validate-discount", async (req, res) => {
         }
         const [totalUsage] = await dbConnecDatabase_1.conn.query("SELECT COUNT(*) as totalUsed FROM DiscountUsage WHERE cid=?", [discount.cid]);
         if (totalUsage[0].totalUsed >= discount.MaxUsage) {
-            await dbConnecDatabase_1.conn.query("UPDATE DiscountCodes SET isActive = 0 WHERE cid=?", [discount.cid]);
+            await dbConnecDatabase_1.conn.query("UPDATE DiscountCodes SET IsActive = 0 WHERE cid=?", [discount.cid]);
             return res.json({ valid: false, message: "โค้ดนี้มีคนใช้ครบจำนวนแล้ว" });
         }
         // 3. คำนวณส่วนลด

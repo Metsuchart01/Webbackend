@@ -220,7 +220,7 @@ router.post("/validate-discount", async (req, res) => {
   try {
     // 1. หาโค้ดจาก DB
     const [rows]: any = await conn.query(
-      "SELECT * FROM DiscountCodes WHERE Code=? AND isActive=1",
+      "SELECT * FROM DiscountCodes WHERE Code=? AND IsActive=1",
       [code]
     );
     if (rows.length === 0) {
@@ -242,7 +242,8 @@ router.post("/validate-discount", async (req, res) => {
       [discount.cid]
     );
     if (totalUsage[0].totalUsed >= discount.MaxUsage) {
-      await conn.query("UPDATE DiscountCodes SET isActive = 0 WHERE cid=?", [discount.cid]);
+
+      await conn.query("UPDATE DiscountCodes SET IsActive = 0 WHERE cid=?", [discount.cid]);
       return res.json({ valid: false, message: "โค้ดนี้มีคนใช้ครบจำนวนแล้ว" });
     }
 
