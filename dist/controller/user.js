@@ -88,31 +88,38 @@ exports.router.patch("/:id/sales", async (req, res) => {
     const { id } = req.params;
     const { gid } = req.body;
     try {
-        // 1. ดึงราคาเกม
+        // 1. ตรวจสอบว่าเกมมีจริง
         const [gameRows] = await dbConnecDatabase_1.conn.query("SELECT price FROM game WHERE gid = ?", [gid]);
         if (gameRows.length === 0) {
             return res.status(404).json({ message: "ไม่พบเกมที่เลือก" });
         }
         const price = gameRows[0].price;
-        // 2. ตรวจสอบเงินผู้ใช้
+        // 2. ตรวจสอบผู้ใช้
         const [userRows] = await dbConnecDatabase_1.conn.query("SELECT money FROM users WHERE id = ?", [id]);
         if (userRows.length === 0) {
             return res.status(404).json({ message: "ไม่พบผู้ใช้" });
         }
+        // 3. ตรวจสอบว่าเคยซื้อเกมนี้แล้วหรือยัง
+        const [existingSale] = await dbConnecDatabase_1.conn.query("SELECT * FROM sales WHERE user_id = ? AND game_id = ?", [id, gid]);
+        if (existingSale.length > 0) {
+            return res.status(400).json({ message: "คุณได้ซื้อเกมนี้แล้ว" });
+        }
+        // 4. ตรวจสอบเงิน
         const currentMoney = userRows[0].money;
         if (currentMoney < price) {
             return res.status(400).json({ message: "ยอดเงินไม่เพียงพอ" });
         }
-        // 3. หักเงิน
+        // 5. หักเงิน
         await dbConnecDatabase_1.conn.query("UPDATE users SET money = money - ? WHERE id = ?", [price, id]);
-        // 4. บันทึกการซื้อ
+        // 6. บันทึกการซื้อ
         await dbConnecDatabase_1.conn.query("INSERT INTO sales (user_id, game_id, purchase_date) VALUES (?, ?, NOW())", [id, gid]);
-        // 5. ส่งข้อมูลผู้ใช้กลับ
+        // 7. ✅ ลบเกมนี้ออกจากตะกร้าทันที (ถ้ามีอยู่ใน Newwcart)
+        await dbConnecDatabase_1.conn.query("DELETE FROM Newwcart WHERE id = ? AND gid = ?", [id, gid]);
+        // 8. ส่งข้อมูลผู้ใช้ใหม่กลับ
         const [updatedUserRows] = await dbConnecDatabase_1.conn.query("SELECT id, username, email, phone, money FROM users WHERE id = ?", [id]);
-        const user = updatedUserRows[0];
         res.json({
-            message: "ซื้อเกมสำเร็จ",
-            user
+            message: "ซื้อเกมสำเร็จ และลบออกจากตะกร้าแล้ว",
+            user: updatedUserRows[0]
         });
     }
     catch (error) {

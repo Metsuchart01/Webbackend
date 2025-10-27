@@ -1,5 +1,7 @@
 import express from "express";
 import { conn } from "../dbConnecDatabase";
+import { upload } from "../middle/upload";
+import { count } from "console";
 
 export const router = express.Router();
 
@@ -126,7 +128,7 @@ router.delete("/:userId/:gameId", async (req, res) => {
 /* ---------------- ซื้อเกมทั้งหมดในตะกร้า ---------------- */
 router.post("/checkout/:userId", async (req, res) => {
   const { userId } = req.params;
-  const { discountCode, total } = req.body;
+  const { code, total } = req.body;
 
   const connection = await conn.getConnection();
   try {
@@ -148,6 +150,32 @@ router.post("/checkout/:userId", async (req, res) => {
     // คำนวณยอดรวม
     let totalPrice = cart.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0);
 
+
+    // if (code) {
+    //   const [rows]: any = await connection.query(
+    //     `select *  from DiscountCodes where code = ? and isActive = 1 `, [code]
+
+    //   );
+    //   if (rows.length > 0) {
+    //     const discount = rows[0];
+    //     const [usage]: any = await conn.query(
+    //       "SELECT COUNT(*) as used FROM DiscountUsage WHERE cid=? AND user_id=?",
+    //       [discount.cid, userId]
+    //     );
+    //     if (usage[0].used >= discount.UserLimit) {
+    //       return res.json({ valid: false, message: "คุณใช้โค้ดนี้ครบจำนวนแล้ว" });
+    //     }
+    //     // 3. คำนวณส่วนลด
+    //     if (discount.DiscountType === "percent") {
+    //       totalPrice = total - (total * discount.DiscountValue) / 100;
+    //     } else if (discount.DiscountType === "fixed") {
+    //       totalPrice = Math.max(total - discount.DiscountValue, 0);
+    //     }
+    //     await connection.query(`insert into DiscountUsage(cid,UserId) values (?,?)`, [discount.cid, userId])
+
+    //   }
+
+    // }
     // ถ้า frontend ส่ง total มา (เช่นหักโค้ดแล้ว) ใช้แทน
     if (total && total < totalPrice) {
       totalPrice = total;
@@ -204,7 +232,7 @@ router.post("/validate-discount", async (req, res) => {
 
     // 2. เช็คจำนวนการใช้งาน
     const [usage]: any = await conn.query(
-      "SELECT COUNT(*) as used FROM DiscountUsage WHERE cid=? AND user_id=?",
+      "SELECT COUNT(*) as used FROM DiscountUsage WHERE cid=? AND UserId=?",
       [discount.cid, userId]
     );
     if (usage[0].used >= discount.UserLimit) {
@@ -230,3 +258,4 @@ router.post("/validate-discount", async (req, res) => {
     res.status(500).json({ valid: false, message: "เกิดข้อผิดพลาด" });
   }
 });
+
