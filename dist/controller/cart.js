@@ -188,6 +188,7 @@ exports.router.post("/validate-discount", async (req, res) => {
         else if (discount.DiscountType === "fixed") {
             newTotal = Math.max(total - discount.DiscountValue, 0);
         }
+        await dbConnecDatabase_1.conn.query(`insert into DiscountUsage(cid,UserId) values (?,?)`, [discount.cid, userId]);
         return res.json({
             valid: true,
             discountType: discount.DiscountType,
