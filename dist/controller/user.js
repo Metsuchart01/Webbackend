@@ -148,6 +148,7 @@ exports.router.get("/:id/sales", async (req, res) => {
     const { id } = req.params;
     try {
         const [rows] = await dbConnecDatabase_1.conn.query(`SELECT 
+            s.game_id,
          s.id, s.user_id, u.username,
          g.NameGame, g.price, g.imageGame,
          s.purchase_date
