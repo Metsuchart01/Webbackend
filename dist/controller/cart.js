@@ -21,13 +21,14 @@ exports.router.post("/add", async (req, res) => {
         }
         // 2. ตรวจสอบว่าเกมมีอยู่ในตะกร้าแล้วหรือยัง
         const [rows] = await dbConnecDatabase_1.conn.query("SELECT * FROM Newwcart WHERE id=? AND gid=?", [userId, gameId]);
+        // ถ้ามีอยู่แล้ว → ห้ามเพิ่มอีก
+        // ถ้ามีอยู่แล้ว → ห้ามเพิ่มอีก
         if (rows.length > 0) {
-            // ถ้ามีอยู่แล้ว → อัปเดตจำนวน
-            await dbConnecDatabase_1.conn.query("UPDATE Newwcart SET quantity = quantity + ? WHERE id=? AND gid=?", [quantity || 1, userId, gameId]);
+            return res.status(400).json({ message: "เกมนี้อยู่ในตะกร้าแล้ว" });
         }
         else {
             // ถ้ายังไม่มี → insert ใหม่
-            await dbConnecDatabase_1.conn.query("INSERT INTO Newwcart (id, gid, quantity) VALUES (?, ?, ?)", [userId, gameId, quantity || 1]);
+            await dbConnecDatabase_1.conn.query("INSERT INTO Newwcart (id, gid, quantity) VALUES (?, ?, ?)", [userId, gameId, 1]);
         }
         res.json({ message: "เพิ่มลงตะกร้าสำเร็จ" });
     }
@@ -179,6 +180,11 @@ exports.router.post("/validate-discount", async (req, res) => {
         const [usage] = await dbConnecDatabase_1.conn.query("SELECT COUNT(*) as used FROM DiscountUsage WHERE cid=? AND UserId=?", [discount.cid, userId]);
         if (usage[0].used >= discount.UserLimit) {
             return res.json({ valid: false, message: "คุณใช้โค้ดนี้ครบจำนวนแล้ว" });
+        }
+        const [totalUsage] = await dbConnecDatabase_1.conn.query("SELECT COUNT(*) as totalUsed FROM DiscountUsage WHERE cid=?", [discount.cid]);
+        if (totalUsage[0].totalUsed >= discount.MaxUsage) {
+            await dbConnecDatabase_1.conn.query("UPDATE DiscountCodes SET isActive = 0 WHERE cid=?", [discount.cid]);
+            return res.json({ valid: false, message: "โค้ดนี้มีคนใช้ครบจำนวนแล้ว" });
         }
         // 3. คำนวณส่วนลด
         let newTotal = total;
